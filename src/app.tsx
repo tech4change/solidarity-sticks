@@ -32,20 +32,6 @@ export function App() {
     canvas && setCtx(canvas.getContext("2d", { willReadFrequently: true }));
   }, [canvas]);
 
-  useEffect(() => {
-    if (!canvas || !bgBitmap) return;
-
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) return;
-        const blobUrl = URL.createObjectURL(blob);
-        setBlobUrl(blobUrl);
-      },
-      "image/png",
-      1
-    );
-  }, [canvas, bgBitmap]);
-
   const drawBackground = useCallback(
     (bitmap: ImageBitmap) => {
       if (!ctx) throw new Error("2d rendering context not yet ready.");
@@ -61,7 +47,7 @@ export function App() {
 
   type Positions = keyof typeof badgePlacements;
 
-  const drawPng = useCallback(async () => {
+  const drawPng = useCallback(() => {
     if (!selectedPosition) return;
     bgBitmap && drawBackground(bgBitmap);
 
@@ -76,12 +62,20 @@ export function App() {
         badgeWidth,
         badgeWidth
       );
-    };
-  }, [canvas, watermark, ctx, bgBitmap, selectedPosition]);
 
-  useEffect(() => {
-    drawPng();
-  }, [selectedPosition, watermark]);
+      canvas?.toBlob(
+        (blob) => {
+          if (!blob) return;
+          const blobUrl = URL.createObjectURL(blob);
+          setBlobUrl(blobUrl);
+        },
+        "image/png",
+        1
+      );
+    };
+  }, [canvas, watermark, ctx, bgBitmap, selectedPosition, setBlobUrl]);
+
+  useEffect(() => drawPng(), [selectedPosition, watermark, bgBitmap]);
 
   return (
     <main className='min-h-screen bg-slate-900 '>
@@ -184,16 +178,14 @@ export function App() {
               </div>
 
               <div className='flex flex-col gap-2'>
-                {blobUrl && (
-                  <button
-                    className='rounded-md bg-[#149954] py-3 text-white'
-                    onClick={() => setBgBitMap(null)}
-                  >
-                    <a href={blobUrl} download='my-img.png' title='Download my img'>
-                      Download
-                    </a>
-                  </button>
-                )}
+                <a
+                  href={blobUrl}
+                  download='my-img.png'
+                  title='Download my img'
+                  className='rounded-md bg-[#149954] py-3 text-white text-center'
+                >
+                  Download
+                </a>
 
                 <button
                   className='rounded-md border border-[#149954] py-3'
